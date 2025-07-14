@@ -1,0 +1,107 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Cria ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ConsoleGui"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+-- Frame principal
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, 0, 0, 130)
+frame.Position = UDim2.new(0, 0, 0, 0)
+frame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Caixa de texto para comando
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1, -20, 0, 40)
+inputBox.Position = UDim2.new(0, 10, 0, 10)
+inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.Font = Enum.Font.Code
+inputBox.TextSize = 22
+inputBox.PlaceholderText = "Digite comando: giveseed [nome] [quantidade]"
+inputBox.ClearTextOnFocus = false
+inputBox.Text = ""
+inputBox.Parent = frame
+
+-- Área de saída das mensagens
+local outputFrame = Instance.new("ScrollingFrame")
+outputFrame.Size = UDim2.new(1, -20, 0, 70)
+outputFrame.Position = UDim2.new(0, 10, 0, 60)
+outputFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+outputFrame.ScrollBarThickness = 6
+outputFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+outputFrame.BorderSizePixel = 0
+outputFrame.Parent = frame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = outputFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 3)
+
+-- Função para adicionar mensagem no output
+local function addOutput(text)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -10, 0, 20)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 18
+    label.Text = text
+    label.Parent = outputFrame
+
+    outputFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y)
+    outputFrame.CanvasPosition = Vector2.new(0, outputFrame.CanvasSize.Y.Offset) -- scroll para baixo
+end
+
+-- Função que adiciona sementes localmente no inventário (deve existir pasta SeedInventory no player)
+local function darSementeLocal(nome, quantidade)
+    local inventory = player:FindFirstChild("SeedInventory")
+    if not inventory then
+        inventory = Instance.new("Folder")
+        inventory.Name = "SeedInventory"
+        inventory.Parent = player
+    end
+
+    local seed = inventory:FindFirstChild(nome)
+    if not seed then
+        seed = Instance.new("IntValue")
+        seed.Name = nome
+        seed.Value = 0
+        seed.Parent = inventory
+    end
+
+    seed.Value = seed.Value + quantidade
+    addOutput("✅ Você recebeu "..quantidade.." sementes de '"..nome.."'!")
+end
+
+-- Processar comando da barra
+inputBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local text = inputBox.Text
+        if text ~= "" then
+            local args = string.split(text, " ")
+            local cmd = args[1]:lower()
+
+            if cmd == "giveseed" then
+                local nome = args[2]
+                local qtd = tonumber(args[3])
+                if nome and qtd and qtd > 0 then
+                    darSementeLocal(nome:lower(), qtd)
+                else
+                    addOutput("❌ Uso correto: giveseed [nome] [quantidade]")
+                end
+            else
+                addOutput("❌ Comando desconhecido: "..text)
+            end
+            inputBox.Text = ""
+        end
+    end
+end)
+
+addOutput("Console iniciado. Use: giveseed [nome] [quantidade]")
